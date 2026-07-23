@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+
+# IDE/도구
+.zcode/
+.vscode/
+.idea/
+
+# 하위 프로젝트의 Python 산물 (하위 .gitignore이 처리하지만 안전용)
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+build/
+dist/
