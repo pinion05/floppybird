@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Floppybird 메뉴 미리보기 실행 스크립트
+#
+# 사용법:  ./run         (floppybird/ 루트에서)
+#
+# 이 스크립트는:
+#   1. Homebrew Python 3.12와 python-tk@3.12(Tk 8.6+)를 확보하고 (Tk 8.5 회피 —
+#      CommandLineTools Python의 Tk 8.5는 캔버스를 화면에 렌더링하지 못하는
+#      알려진 버그가 있음),
+#   2. 가상환경(.venv)을 만들고 의존성을 설치하며,
+#   3. C 디지털 트윈 바이너리를 빌드하고,
+#   4. VFD 메뉴 미리보기 창을 띄웁니다.
+#
+# 처음 한 번은 setup에 수십 초~수 분(brew 설치 포함)이 걸리고, 그 다음부터는 바로 뜹니다.
+
+set -euo pipefail
+
+# --- 경로 설정 ---
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DRIVER_DIR="$SCRIPT_DIR/mn12832l-stm32-driver"
+
+if [ ! -d "$DRIVER_DIR" ]; then
+    echo "오류: $DRIVER_DIR 를 찾을 수 없습니다." >&2
+    echo "이 스크립트는 floppybird/ 루트에서 실행해야 합니다." >&2
+    exit 1
+fi
+
+cd "$DRIVER_DIR"
+
+# --- 1. Python 3.12 + Tk 8.6+ 확보 (Tk 8.5 버그 회피) ---
+#
+# 왜 이 단계가 필요한가:
+# macOS CommandLineTools Python(3.9)은 Tk 8.5를 번들하는데, 이 버전은
+# macOS에서 Tkinter 캔버스가 화면에 렌더링되지 않는 알려진 버그가 있다.
+# Homebrew python-tk@3.12는 Tk 8.6+를 제공하므로 이 문제가 해결된다.
+
+PY312="/opt/homebrew/bin/python3.12"
+
+if [ ! -x "$PY312" ]; then
+    echo "[setup] Homebrew Python 3.12가 없습니다. 설치 중..."
+    if ! command -v brew >/dev/null 2>&1; then
+        echo "오류: Homebrew가 필요합니다. https://brew.sh 에서 설치 후 다시 실행하세요." >&2
+        exit 1
+    fi
+    brew install python@3.12
+fi
+
+# python-tk@3.12가 깔려 있는지 확인 (tkinter import로 검사)
+if ! "$PY312" -c "import tkinter" >/dev/null 2>&1; then
+    echo "[setup] python-tk@3.12(Tk 8.6+) 설치 중 — 캔버스 렌더링에 필수..."
+    brew install python-tk@3.12
+fi
+
+# 최종 검증: Tk 버전이 8.6 이상인지
+TK_VERSION="$("$PY312" -c "import tkinter; r=tkinter.Tk(); print(r.tk.call('info','patchlevel')); r.destroy()" 2>/dev/null || echo "")"
+if [ -z "$TK_VERSION" ]; then
+    echo "오류: python-tk@3.12 설치 후에도 tkinter를 불러오지 못했습니다." >&2
+    echo "brew reinstall python-tk@3.12 를 시도해 보세요." >&2
+    exit 1
+fi
+echo "[setup] Python 3.12 + Tk $TK_VERSION 확인"
+
+# --- 2. 가상환경 + 의존성 ---
+VENV="$DRIVER_DIR/.venv"
+VENV_PY="$VENV/bin/python"
+
+# venv가 있지만 다른 Python(예: CommandLineTools 3.9) 기반이면 교체
+NEEDS_RECREATE=false
+if [ -x "$VENV_PY" ]; then
+    VENV_VERSION="$("$VENV_PY" -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")' 2>/dev/null || echo "?")"
+    if [ "$VENV_VERSION" != "3.12" ]; then
+        echo "[setup] 기존 venv(Python $VENV_VERSION)를 Python 3.12로 교체합니다..."
+        rm -rf "$VENV"
+        NEEDS_RECREATE=true
+    fi
+else
+    NEEDS_RECREATE=true
+fi
+
+if [ "$NEEDS_RECREATE" = true ]; then
+    "$PY312" -m venv "$VENV"
+    "$VENV_PY" -m pip install --upgrade pip >/dev/null
+fi
+
+# mn12832l 패키지 설치 여부 확인
+if ! "$VENV_PY" -c "import mn12832l" >/dev/null 2>&1; then
+    echo "[setup] 의존성 설치 중..."
+    "$VENV_PY" -m pip install -e '.[serial]' >/dev/null
+fi
+
+# --- 3. C 디지털 트윈 바이너리 ---
+TWIN_BIN="$DRIVER_DIR/build/vfd_system_twin"
+if [ ! -x "$TWIN_BIN" ]; then
+    echo "[setup] C 디지털 트윈 빌드 중..."
+    make "$TWIN_BIN" PYTHON="$VENV_PY" >/dev/null
+fi
+
+# --- 4. 메뉴 미리보기 실행 ---
+echo "[run] Floppybird 메뉴 미리보기를 띄웁니다..."
+echo "      조작: 다이얼 ◀/▶ 이동 · 다이얼 누르기 선택 · BTN4 뒤로"
+echo ""
+make menu PYTHON="$VENV_PY"
