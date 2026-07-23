@@ -17,11 +17,11 @@ VFD 화면에 부팅 → 메인 메뉴 → 음악/게임/설정 같은 메뉴를
 
 | 화면 | 모습 |
 |---|---|
-| 부팅 | ![부팅 화면](mn12832l-stm32-driver/docs/screenshots/01_boot.png) |
-| 메인 메뉴 (음악 선택) | ![메인 메뉴 - 음악](mn12832l-stm32-driver/docs/screenshots/02_main_music.png) |
-| 메인 메뉴 (게임 선택) | ![메인 메뉴 - 게임](mn12832l-stm32-driver/docs/screenshots/03_main_game.png) |
-| 메인 메뉴 (설정 선택) | ![메인 메뉴 - 설정](mn12832l-stm32-driver/docs/screenshots/04_main_settings.png) |
-| 설정 화면 | ![설정](mn12832l-stm32-driver/docs/screenshots/05_settings.png) |
+| 부팅 | ![부팅 화면](https://raw.githubusercontent.com/pinion05/mn12832l-stm32-driver/main/docs/screenshots/01_boot.png) |
+| 메인 메뉴 (음악 선택) | ![메인 메뉴 - 음악](https://raw.githubusercontent.com/pinion05/mn12832l-stm32-driver/main/docs/screenshots/02_main_music.png) |
+| 메인 메뉴 (게임 선택) | ![메인 메뉴 - 게임](https://raw.githubusercontent.com/pinion05/mn12832l-stm32-driver/main/docs/screenshots/03_main_game.png) |
+| 메인 메뉴 (설정 선택) | ![메인 메뉴 - 설정](https://raw.githubusercontent.com/pinion05/mn12832l-stm32-driver/main/docs/screenshots/04_main_settings.png) |
+| 설정 화면 | ![설정](https://raw.githubusercontent.com/pinion05/mn12832l-stm32-driver/main/docs/screenshots/05_settings.png) |
 
 ---
 
@@ -96,9 +96,9 @@ cd floppybird
 
 ## 📁 하위 프로젝트: `mn12832l-stm32-driver`
 
-[![submodule](https://img.shields.io/badge/submodule-mn12832l--stm32--driver-blue)](mn12832l-stm32-driver/)
+[![submodule](https://img.shields.io/badge/submodule-mn12832l--stm32--driver-blue)](https://github.com/pinion05/mn12832l-stm32-driver)
 
-VFD 드라이버 + Python 호스트 스택 + 디지털 트윈. 세부 내용은 [하위 README](mn12832l-stm32-driver/README.md)와 [분석 보고서](mn12832l-stm32-driver/ANALYSIS.md) 참고.
+VFD 드라이버 + Python 호스트 스택 + 디지털 트윈. 세부 내용은 [하위 README](https://github.com/pinion05/mn12832l-stm32-driver/blob/main/README.md)와 [분석 보고서](https://github.com/pinion05/mn12832l-stm32-driver/blob/main/ANALYSIS.md) 참고.
 
 주요 구성:
 - **Python 호스트 스택** — 프레임 렌더링, CRC 프레임 프로토콜, 전송/재시도, 직렬 브리지
