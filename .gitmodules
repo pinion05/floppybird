@@ -1,3 +1,0 @@
-[submodule "mn12832l-stm32-driver"]
-	path = mn12832l-stm32-driver
-	url = https://github.com/pinion05/mn12832l-stm32-driver.git
