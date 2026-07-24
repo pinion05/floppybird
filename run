@@ -27,11 +27,51 @@ fi
 
 cd "$DRIVER_DIR"
 
+# --- 로딩 배너 (패키지에 든 FLOPPYBIRD 워드마크) ---
+print_banner() {
+    local asset="$DRIVER_DIR/src/mn12832l/assets/loading_wordmark.txt"
+    if [ -f "$asset" ]; then
+        # VFD 느낌의 청록색으로
+        if [ -t 1 ]; then
+            printf '\033[36m'
+            cat "$asset"
+            printf '\033[0m\n'
+        else
+            cat "$asset"; echo
+        fi
+    else
+        echo "FLOPPYBIRD"
+    fi
+    echo
+}
+
+# setup 필요 여부 판별 (배너를 setup 중에만 띄우기 위함)
+NEEDS_SETUP=false
+[ ! -x "/opt/homebrew/bin/python3.12" ] && NEEDS_SETUP=true
+if [ -x "/opt/homebrew/bin/python3.12" ] && ! /opt/homebrew/bin/python3.12 -c "import tkinter" >/dev/null 2>&1; then
+    NEEDS_SETUP=true
+fi
+[ ! -x "$DRIVER_DIR/.venv/bin/python" ] && NEEDS_SETUP=true
+if [ -x "$DRIVER_DIR/.venv/bin/python" ]; then
+    if ! "$DRIVER_DIR/.venv/bin/python" -c "import mn12832l" >/dev/null 2>&1; then
+        NEEDS_SETUP=true
+    fi
+    VENV_VER="$("$DRIVER_DIR/.venv/bin/python" -c 'print(f"{__import__("sys").version_info[0]}.{__import__("sys").version_info[1]}")' 2>/dev/null || echo "?")"
+    [ "$VENV_VER" != "3.12" ] && NEEDS_SETUP=true
+fi
+[ ! -x "$DRIVER_DIR/build/vfd_system_twin" ] && NEEDS_SETUP=true
+
+if [ "$NEEDS_SETUP" = true ]; then
+    print_banner
+    echo "설정을 시작합니다. 처음 한 번만 시간이 걸립니다..."
+    echo
+fi
+
 # --- 1. Python 3.12 + Tk 8.6+ 확보 (Tk 8.5 버그 회피) ---
 #
 # 왜 이 단계가 필요한가:
 # macOS CommandLineTools Python(3.9)은 Tk 8.5를 번들하는데, 이 버전은
-# macOS에서 Tkinter 캔버스가 화면에 렌더링되지 않는 알려진 버그가 있다.
+# macOS에서 Tkinter 캔버스가 화면에 렌더링하지 못하는 알려진 버그가 있다.
 # Homebrew python-tk@3.12는 Tk 8.6+를 제공하므로 이 문제가 해결된다.
 
 PY312="/opt/homebrew/bin/python3.12"
