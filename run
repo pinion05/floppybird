@@ -89,10 +89,10 @@ if ! "$VENV_PY" -c "import mn12832l" >/dev/null 2>&1; then
 fi
 
 # --- 3. C 디지털 트윈 바이너리 ---
-TWIN_BIN="$DRIVER_DIR/build/vfd_system_twin"
-if [ ! -x "$TWIN_BIN" ]; then
+# Makefile은 상대 경로(build/vfd_system_twin)만 인식하므로 cd 후 빌드.
+if [ ! -x "$DRIVER_DIR/build/vfd_system_twin" ]; then
     echo "[setup] C 디지털 트윈 빌드 중..."
-    make "$TWIN_BIN" PYTHON="$VENV_PY" >/dev/null
+    make build/vfd_system_twin PYTHON="$VENV_PY" >/dev/null
 fi
 
 # --- 4. 메뉴 미리보기 실행 ---
