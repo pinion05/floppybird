@@ -94,6 +94,24 @@ cd floppybird
 
 ---
 
+## 🐛 트러블슈팅: 캔버스가 화면에 안 보일 때 (Tk 8.5 버그)
+
+**증상:** `./run`으로 창은 뜨는데 VFD 캔버스가 하얗거나 비어 보인다. 버튼은 보이지만 메뉴 글자가 안 보인다.
+
+**근본 원인:** Apple **CommandLineTools Python(3.9)이 번들한 Tk 8.5**에 macOS에서 캔버스를 화면에 렌더링하지 못하는 알려진 버그가 있다. 10년 넘게 미해결.
+
+**진단 증거 (체계적 디버깅으로 확인):**
+- 단순한 Tkinter Hello World도 같은 증상 → 우리 코드 버그가 아님
+- Tkinter는 캔버스에 484개 사각형 객체를 정상 생성 (코드는 맞음)
+- `screencapture -l`과 cua-driver 단일 창 캡처가 모두 실패/빈 이미지 → 백업 스토어 노출 안 됨
+- Homebrew Python 3.11/3.12/3.14는 `tkinter` import 자체 불가 (`_tkinter` 빌드 안 됨)
+
+**해결:** `./run`이 **Homebrew Python 3.12 + `python-tk@3.12`(Tk 9.0)** 를 자동으로 확보하도록 했다. `sudo` 불필요, bottle로 받아 5초면 끝. 이걸로 캔버스가 정상 렌더링된다.
+
+**재발 방지:** `./run`은 venv가 Python 3.12 기반인지 검사하고, 구버전 Python 기반이면 자동으로 재생성한다.
+
+---
+
 ## 📁 하위 프로젝트: `mn12832l-stm32-driver`
 
 [![submodule](https://img.shields.io/badge/submodule-mn12832l--stm32--driver-blue)](https://github.com/pinion05/mn12832l-stm32-driver)
