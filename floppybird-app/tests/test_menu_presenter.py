@@ -1,8 +1,8 @@
 import os
 import unittest
 
-from mn12832l.menu.model import Screen, ScreenKind
-from mn12832l.menu.presenter import MenuPresenter
+from floppybird.menu.model import Screen, ScreenKind
+from floppybird.menu.presenter import MenuPresenter
 
 
 @unittest.skipUnless(

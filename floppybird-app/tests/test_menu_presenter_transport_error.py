@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import unittest
 
-from mn12832l.menu.model import Screen, ScreenKind
-from mn12832l.menu.presenter import MenuPresenter
+from floppybird.menu.model import Screen, ScreenKind
+from floppybird.menu.presenter import MenuPresenter
 from mn12832l.transport import TransportError
 
 
