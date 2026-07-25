@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional
 
 from ..display import DisplayError, VfdDisplay
 from ..renderer import MvlsbRenderer
+from ..transport import TransportError
 from ..twin import DigitalTwinError, DigitalTwinTransport
 from .model import Screen
 from .render import draw_screen
@@ -47,8 +48,10 @@ class MenuPresenter:
         frame = draw_screen(screen, self._renderer)
         try:
             self._display.present(frame)
-        except (DigitalTwinError, DisplayError) as error:
-            # 스펙 5절: 검증 실패/거부는 예외로 → 빨간 오버레이용 에러 정보
+        except (DigitalTwinError, DisplayError, TransportError) as error:
+            # 스펙 5절: 검증 실패/거부는 예외로 → 빨간 오버레이용 에러 정보.
+            # TransportError(twin 프로세스 크래시/타임아웃, 파이프 단절)도 같이 잡아
+            # MenuApp.tick(app.py)이 self._root.after 재스케줄을 놓치고 멈추지 않도록.
             return PresentedFrame(
                 verified_frame=self._last_verified or frame,
                 twin_passed=False,
