@@ -34,22 +34,27 @@ class MenuApp:
 
     def setup(self) -> None:
         self._root.title("Floppybird Menu Preview")
+
+        # 디스플레이(캔버스) + 우측 버튼 열을 가로로 나란히 묶는 컨테이너.
+        display_frame = tk.Frame(self._root)
+        display_frame.pack(padx=12, pady=12)
+
         self._canvas = tk.Canvas(
-            self._root, width=_WIDTH * _SCALE, height=_HEIGHT * _SCALE,
+            display_frame, width=_WIDTH * _SCALE, height=_HEIGHT * _SCALE,
             bg=_VFD_OFF, highlightthickness=1, highlightbackground="#143a32",
         )
-        self._canvas.pack(padx=12, pady=12)
+        self._canvas.pack(side="left")
+
+        # 버튼 열 — 디스플레이 우측에 BTN1→BTN4 위에서 아래로 세로 배치.
+        btn_frame = tk.Frame(display_frame)
+        btn_frame.pack(side="left", padx=(12, 0), fill="y")
+        for event, label in [(BTN1, "BTN1"), (BTN2, "BTN2"), (BTN3, "BTN3"),
+                             (BTN4, "BTN4 (뒤로)")]:
+            self._source.make_button(btn_frame, event, label).pack(side="top", pady=4)
 
         self._status = tk.Label(self._root, text="...", fg=_VFD_ON, bg="#04080a",
                                 font=("Galmuri7", 11), anchor="w", justify="left")
         self._status.pack(fill="x", padx=12)
-
-        # 버튼 행
-        btn_frame = tk.Frame(self._root)
-        btn_frame.pack(pady=6)
-        for event, label in [(BTN1, "BTN1"), (BTN2, "BTN2"), (BTN3, "BTN3"),
-                             (BTN4, "BTN4 (뒤로)")]:
-            self._source.make_button(btn_frame, event, label).pack(side="left", padx=4)
 
         # 엔코더 행
         enc_frame = tk.Frame(self._root)
