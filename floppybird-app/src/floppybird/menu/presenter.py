@@ -13,8 +13,9 @@ from mn12832l import (
     TransportError,
     VfdDisplay,
 )
-from .model import Screen
-from .render import draw_screen
+
+from .nodes import Node
+from .render import draw_root
 
 
 @dataclass(frozen=True)
@@ -26,7 +27,7 @@ class PresentedFrame:
 
 
 class MenuPresenter:
-    """draw_screen → VfdDisplay.present → transport.last_result 파이프라인."""
+    """draw_root → VfdDisplay.present → transport.last_result 파이프라인."""
 
     def __init__(self, engine: str, renderer: Optional[MvlsbRenderer] = None) -> None:
         self._renderer = renderer or MvlsbRenderer()
@@ -48,14 +49,11 @@ class MenuPresenter:
     def __exit__(self, *exc: Any) -> None:
         self.close()
 
-    def present(self, screen: Screen) -> PresentedFrame:
-        frame = draw_screen(screen, self._renderer)
+    def present(self, root: Node) -> PresentedFrame:
+        frame = draw_root(root, self._renderer)
         try:
             self._display.present(frame)
         except (DigitalTwinError, DisplayError, TransportError) as error:
-            # 스펙 5절: 검증 실패/거부는 예외로 → 빨간 오버레이용 에러 정보.
-            # TransportError(twin 프로세스 크래시/타임아웃, 파이프 단절)도 같이 잡아
-            # MenuApp.tick(app.py)이 self._root.after 재스케줄을 놓치고 멈추지 않도록.
             return PresentedFrame(
                 verified_frame=self._last_verified or frame,
                 twin_passed=False,
@@ -79,7 +77,6 @@ class MenuPresenter:
                 stats=self._last_stats,
                 error=None,
             )
-        # sent=False (dedup) 직전 결과 재사용
         return PresentedFrame(
             verified_frame=self._last_verified or frame,
             twin_passed=self._last_verified is not None,
