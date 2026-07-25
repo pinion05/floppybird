@@ -9,9 +9,14 @@ from importlib import resources
 from PIL import Image, ImageDraw, ImageFont
 
 from mn12832l import FRAME_HEIGHT, FRAME_WIDTH, MvlsbRenderer, load_ascii_art_asset
+from .list_component import ListComponent
 from .model import Screen, ScreenKind
 
-_MAIN_ITEMS = ["MUSIC PLAYER", "MINI GAME", "SETTINGS"]
+# MAIN_MENU 렌더링용 ListComponent — 모델의 _MAIN_ITEMS(NavItem 리스트)를 공유.
+# 항목 정의는 model._MAIN_ITEMS가 source of truth.
+from .model import _MAIN_ITEMS as _MAIN_NAV_ITEMS
+
+_main_list = ListComponent(_MAIN_NAV_ITEMS)
 
 
 @lru_cache(maxsize=4)
@@ -106,11 +111,9 @@ def draw_screen(screen: Screen, renderer: MvlsbRenderer) -> bytes:
         _draw_wordmark(draw)
         _draw_loading_bar(draw, step)
     elif screen.kind is ScreenKind.MAIN_MENU:
-        # 항목 3개를 y=3/12/21에 배치 → 폰트(8px) 포함 y~29, 바닥 여백 2확보
-        for i, label in enumerate(_MAIN_ITEMS):
-            y = 3 + i * 9
-            marker = ">" if i == screen.index else " "
-            draw.text((1, y), f"{marker} {label}", font=font, fill=1)
+        # ListComponent가 항목을 세로로 배치 (기본 y=3, row 9px). 각 NavItem이
+        # '> label' 마커를 그림. 기존 픽셀 레이아웃과 동일 (golden frame 유지).
+        _main_list.render(draw, font, screen.index)
         # 우상단 벽시계 — 시간이 None(BOOT 직후 예외 케이스)이면 그리지 않음.
         if screen.now_hhmm is not None:
             _draw_clock(draw, font, screen.now_hhmm)
