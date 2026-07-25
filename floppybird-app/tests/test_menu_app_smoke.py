@@ -1,6 +1,6 @@
 import unittest
 
-from mn12832l.menu.app import MenuApp
+from floppybird.menu.app import MenuApp
 
 
 class MenuAppImportTests(unittest.TestCase):

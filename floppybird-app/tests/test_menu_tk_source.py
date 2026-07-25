@@ -1,8 +1,8 @@
 import unittest
 from collections import deque
 
-from mn12832l.menu.input import BTN1, ENCODER_CLICK, ENCODER_ROTATE_CW
-from mn12832l.menu.tk_source import TkinterSource
+from floppybird.menu.input import BTN1, ENCODER_CLICK, ENCODER_ROTATE_CW
+from floppybird.menu.tk_source import TkinterSource
 
 
 class TkinterSourceQueueTests(unittest.TestCase):

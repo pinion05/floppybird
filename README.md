@@ -6,8 +6,13 @@
 floppybird/                          ← 이 저장소
 ├── run                              ← 실행 스크립트: ./run 한 줄로 미리보기 창 실행
 ├── AGENTS.md
-└── mn12832l-stm32-driver/  (submodule)  ← VFD 드라이버 + 호스트 스택 + 디지털 트윈
+├── mn12832l-stm32-driver/           ← VFD 드라이버: 하드웨어 추상화 + 호스트 스택 + 디지털 트윈
+│   (Python 패키지 mn12832l-vfd, C 펌웨어 포함)
+└── floppybird-app/                  ← 메뉴 애플리케이션: Fallout 컨셉 메뉴 + Tkinter 미리보기
+    (Python 패키지 floppybird-app, mn12832l-vfd에 의존)
 ```
+
+두 패키지는 같은 저장소 안에 있지만 별도로 설치된다 — 드라이버(`mn12832l-vfd`)가 하드웨어 계층, 앱(`floppybird-app`)이 드라이버 위의 애플리케이션 계층. `./run`이 두 패키지를 모두 editable 설치한 뒤 미리보기를 띄운다.
 
 ---
 
@@ -112,17 +117,20 @@ cd floppybird
 
 ---
 
-## 📁 하위 프로젝트: `mn12832l-stm32-driver`
+## 📁 하위 패키지: `mn12832l-stm32-driver` (드라이버)
 
-[![submodule](https://img.shields.io/badge/submodule-mn12832l--stm32--driver-blue)](https://github.com/pinion05/mn12832l-stm32-driver)
-
-VFD 드라이버 + Python 호스트 스택 + 디지털 트윈. 세부 내용은 [하위 README](https://github.com/pinion05/mn12832l-stm32-driver/blob/main/README.md)와 [분석 보고서](https://github.com/pinion05/mn12832l-stm32-driver/blob/main/ANALYSIS.md) 참고.
+VFD 드라이버 + Python 호스트 스택 + 디지털 트윈. 세부 내용은 하위 `README.md`와 `ANALYSIS.md` 참고.
 
 주요 구성:
 - **Python 호스트 스택** — 프레임 렌더링, CRC 프레임 프로토콜, 전송/재시도, 직렬 브리지
 - **STM32F0 펌웨어** (C) — 43상 스캔 드라이버, 호스트 링크 수신기, 핀 에미션, ISR, 안전 셧다운
 - **디지털 트윈** — 핀 레벨 C 시스템 트윈 + Python TUI, 라운드트립 검증
-- **VFD 메뉴 시스템** — 5화면 메뉴, 입력 부품 교체, Tkinter 미리보기 (이번에 추가)
+
+## 📁 하위 패키지: `floppybird-app` (애플리케이션)
+
+드라이버(`mn12832l-vfd`) 위에 올라가는 Fallout 컨셉 메뉴 시스템. 드라이버의 공개 API만 import한다.
+
+- **VFD 메뉴 시스템** — 5화면 메뉴, 입력 부품 교체 가능(InputSource), Tkinter 미리보기
 
 ---
 

@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "floppybird-app"
+version = "0.1.0"
+description = "Fallout-concept VFD menu application — Tkinter preview + input abstraction"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "mn12832l-vfd>=1.1.0",
+  "Pillow>=9.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+floppybird = "floppybird.__main__:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

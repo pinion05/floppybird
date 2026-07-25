@@ -8,8 +8,8 @@ from typing import Optional, Tuple
 
 from PIL import ImageFont
 
-from mn12832l.menu.model import MenuModel, Screen, ScreenKind
-from mn12832l.menu.render import draw_screen
+from floppybird.menu.model import MenuModel, Screen, ScreenKind
+from floppybird.menu.render import draw_screen
 from mn12832l.renderer import MvlsbRenderer
 
 # VFD 물리 프레임 크기 (protocol.py의 FRAME_WIDTH/FRAME_HEIGHT와 동일)
@@ -260,14 +260,22 @@ class ClockStatusBarTests(unittest.TestCase):
 
 
 def _build_package_zip() -> str:
-    """src/mn12832l 패키지 전체를 zip으로 묶어 임시 경로 반환 (zipimport 시뮬레이션).
+    """mn12832l 드라이버 패키지 전체를 zip으로 묶어 임시 경로 반환 (zipimport 시뮬레이션).
 
     zipapp/zipimport 환경에서 폰트가 진짜 로드되는지 검증하기 위한 픽스처.
+    폰트 자산(Galmuri7.ttf)은 드라이버 패키지(mn12832l)가 소유하므로, zip에는
+    mn12832l만 묶는다. render는 floppybird 패키지에 있고, 드라이버 자산을
+    빌려쓰는 구조이므로 zip 밖에 둔다.
     """
+    # 드라이버 src는 형제 디렉토리(../mn12832l-stm32-driver/src)에 있다.
     src_root = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "..", "src")
+        os.path.join(os.path.dirname(__file__), "..", "..", "mn12832l-stm32-driver", "src")
     )
     pkg_root = os.path.join(src_root, "mn12832l")
+    if not os.path.isdir(pkg_root):
+        raise FileNotFoundError(
+            f"driver package not found at {pkg_root} — run tests from repo root"
+        )
     fd, zip_path = tempfile.mkstemp(suffix=".zip", prefix="mn12832l_test_")
     os.close(fd)
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
@@ -302,6 +310,9 @@ class FontLoadTests(unittest.TestCase):
         ImageFont.truetype(str(fp))가 OSError를 내고 except가 삼켜 폴백한다.
         올바른 구현(resources.files('mn12832l').joinpath('assets', name))은
         zip에서도 읽힌다.
+
+        참고: render는 floppybird 패키지에, 폰트 자산은 mn12832l 드라이버 패키지에
+        있다. zip에는 자산 소유자인 mn12832l만 묶고, 그 안의 자산이 읽히는지 검증한다.
         """
         zip_path = _build_package_zip()
         try:
@@ -356,7 +367,7 @@ class FontLoadTests(unittest.TestCase):
         _font()가 같은 폰트 객체(또는 동일 글리프 메트릭)를 반환하는지 비교하여
         _font()가 load_default 폴백이 아닌 진짜 Galmuri7을 썼음을 보인다.
         """
-        from mn12832l.menu.render import _font
+        from floppybird.menu.render import _font
 
         _font.cache_clear()
         font = _font(8)
@@ -383,7 +394,13 @@ class FontLoadTests(unittest.TestCase):
         ImageFont.truetype(str(fp))가 OSError를 내고 except가 삼켜
         load_default()로 폴백한다. Pillow 12+에서 load_default도 FreeTypeFont를
         반환하므로 타입 이름 비교로는 폴백을 못 잡는다 — 글리프 메트릭을 비교한다.
+
+        참고: render는 floppybird 패키지에, 폰트 자산은 mn12832l 드라이버 패키지에
+        있다. zip에는 자산 소유자인 mn12832l만 묶고, render._font()가 그 자산을
+        읽어오는지 검증한다.
         """
+        from floppybird.menu import render as render_mod
+
         zip_path = _build_package_zip()
         try:
             sys.path.insert(0, zip_path)
@@ -396,7 +413,7 @@ class FontLoadTests(unittest.TestCase):
 
             import importlib.util
 
-            render_mod = importlib.import_module("mn12832l.menu.render")
+            importlib.import_module("mn12832l")  # zip에서 로드 확인
             pkg_spec = importlib.util.find_spec("mn12832l")
             self.assertIn(
                 zip_path,

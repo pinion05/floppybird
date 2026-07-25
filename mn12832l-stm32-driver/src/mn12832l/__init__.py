@@ -15,9 +15,12 @@ from .transport import (
     TransportError,
     TransportTimeoutError,
 )
+from .twin import DigitalTwinError, DigitalTwinTransport, load_ascii_art_asset
 
 __all__ = [
     "AckStatus",
+    "DigitalTwinError",
+    "DigitalTwinTransport",
     "DisplayClosedError",
     "DisplayError",
     "FRAME_BYTES",
@@ -32,4 +35,5 @@ __all__ = [
     "TransportError",
     "TransportTimeoutError",
     "VfdDisplay",
+    "load_ascii_art_asset",
 ]

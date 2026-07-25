@@ -1,7 +1,7 @@
 import unittest
 
-from mn12832l.menu.input import ENCODER_CLICK, ENCODER_ROTATE_CCW, ENCODER_ROTATE_CW, BTN4
-from mn12832l.menu.model import MenuModel, ScreenKind
+from floppybird.menu.input import ENCODER_CLICK, ENCODER_ROTATE_CCW, ENCODER_ROTATE_CW, BTN4
+from floppybird.menu.model import MenuModel, ScreenKind
 
 
 class BootTransitionTests(unittest.TestCase):
@@ -151,7 +151,7 @@ class ClockStatusTests(unittest.TestCase):
 
     def test_clock_source_propagates_to_subscreens(self) -> None:
         # 서브화면은 시계를 그리진 않지만 Screen.now_hhmm는 여전히 채워짐.
-        from mn12832l.menu.input import ENCODER_CLICK
+        from floppybird.menu.input import ENCODER_CLICK
         model = MenuModel(clock=_make_clock(15, 45))
         model.tick(2.0)
         model.handle_input(ENCODER_CLICK)  # MAIN → MUSIC

@@ -1,6 +1,6 @@
 import unittest
 
-from mn12832l.menu.input import (
+from floppybird.menu.input import (
     ENCODER_CLICK,
     ENCODER_ROTATE_CCW,
     ENCODER_ROTATE_CW,

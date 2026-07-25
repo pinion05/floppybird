@@ -8,9 +8,7 @@ from importlib import resources
 
 from PIL import Image, ImageDraw, ImageFont
 
-from ..protocol import FRAME_HEIGHT, FRAME_WIDTH
-from ..renderer import MvlsbRenderer
-from ..twin import load_ascii_art_asset
+from mn12832l import FRAME_HEIGHT, FRAME_WIDTH, MvlsbRenderer, load_ascii_art_asset
 from .model import Screen, ScreenKind
 
 _MAIN_ITEMS = ["MUSIC PLAYER", "MINI GAME", "SETTINGS"]

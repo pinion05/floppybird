@@ -5,10 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from ..display import DisplayError, VfdDisplay
-from ..renderer import MvlsbRenderer
-from ..transport import TransportError
-from ..twin import DigitalTwinError, DigitalTwinTransport
+from mn12832l import (
+    DigitalTwinError,
+    DigitalTwinTransport,
+    DisplayError,
+    MvlsbRenderer,
+    TransportError,
+    VfdDisplay,
+)
 from .model import Screen
 from .render import draw_screen
 

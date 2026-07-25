@@ -18,9 +18,15 @@ set -euo pipefail
 # --- 경로 설정 ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DRIVER_DIR="$SCRIPT_DIR/mn12832l-stm32-driver"
+APP_DIR="$SCRIPT_DIR/floppybird-app"
 
 if [ ! -d "$DRIVER_DIR" ]; then
     echo "오류: $DRIVER_DIR 를 찾을 수 없습니다." >&2
+    echo "이 스크립트는 floppybird/ 루트에서 실행해야 합니다." >&2
+    exit 1
+fi
+if [ ! -d "$APP_DIR" ]; then
+    echo "오류: $APP_DIR 를 찾을 수 없습니다." >&2
     echo "이 스크립트는 floppybird/ 루트에서 실행해야 합니다." >&2
     exit 1
 fi
@@ -122,10 +128,16 @@ if [ "$NEEDS_RECREATE" = true ]; then
     "$VENV_PY" -m pip install --upgrade pip >/dev/null
 fi
 
-# mn12832l 패키지 설치 여부 확인
+# 드라이버(mn12832l) 패키지 설치 여부 확인
 if ! "$VENV_PY" -c "import mn12832l" >/dev/null 2>&1; then
-    echo "[setup] 의존성 설치 중..."
+    echo "[setup] 드라이버(mn12832l-vfd) 의존성 설치 중..."
     "$VENV_PY" -m pip install -e '.[serial]' >/dev/null
+fi
+
+# 앱(floppybird) 패키지 설치 여부 확인
+if ! "$VENV_PY" -c "import floppybird" >/dev/null 2>&1; then
+    echo "[setup] 앱(floppybird-app) 의존성 설치 중..."
+    "$VENV_PY" -m pip install -e "$APP_DIR" >/dev/null
 fi
 
 # --- 3. C 디지털 트윈 바이너리 ---
@@ -139,4 +151,5 @@ fi
 echo "[run] Floppybird 메뉴 미리보기를 띄웁니다..."
 echo "      조작: 다이얼 ◀/▶ 이동 · 다이얼 누르기 선택 · BTN4 뒤로"
 echo ""
-make menu PYTHON="$VENV_PY"
+MN12832L_SYSTEM_TWIN="$DRIVER_DIR/build/vfd_system_twin" \
+    "$VENV_PY" -m floppybird
