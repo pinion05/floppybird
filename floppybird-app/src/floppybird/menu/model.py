@@ -8,9 +8,9 @@ from enum import Enum, auto
 from typing import Callable, Optional
 
 from .input import ENCODER_CLICK, ENCODER_ROTATE_CCW, ENCODER_ROTATE_CW, BTN4, InputEvent
+from .list_component import ListComponent, ListContext, NavItem
 
 _BOOT_DURATION = 2.0
-_MAIN_ITEMS = 3  # MUSIC, GAME, SETTINGS
 
 # 벽시계 소스 — struct_time(또는 같은 필드를 가진 객체)를 반환하는 호출 가능 객체.
 ClockSource = Callable[[], "time.struct_time"]
@@ -29,8 +29,14 @@ class ScreenKind(Enum):
     SETTINGS = auto()
 
 
-# MAIN_MENU 인덱스 → 하위 화면 매핑 (스펙 4.2.1)
-_MAIN_TARGETS = [ScreenKind.MUSIC, ScreenKind.GAME, ScreenKind.SETTINGS]
+# MAIN_MENU 항목 — NavItem으로 구성. (이슈 #7 이전엔 _MAIN_ITEMS 개수 + _MAIN_TARGETS
+# 리스트가 분리되어 있었음. ListComponent 도입으로 항목 정의가 한 곳에 모임.)
+# 항목 추가/순서 변경은 이 리스트만 고치면 됨.
+_MAIN_ITEMS: list = [
+    NavItem("MUSIC PLAYER", ScreenKind.MUSIC),
+    NavItem("MINI GAME", ScreenKind.GAME),
+    NavItem("SETTINGS", ScreenKind.SETTINGS),
+]
 
 
 @dataclass(frozen=True)
@@ -44,7 +50,11 @@ class Screen:
 
 
 class MenuModel:
-    """메뉴 상태. 입력 부품(InputSource)을 모름 — 이벤트만 받는다."""
+    """메뉴 상태. 입력 부품(InputSource)을 모름 — 이벤트만 받는다.
+
+    MAIN_MENU 입력 처리는 ListComponent에 위임. 상태(_index)는 모델이 소유,
+    ListComponent는 상태 없는 서비스 — 호출 시 selected를 인자로 전달.
+    """
 
     def __init__(self, clock: ClockSource = time.localtime) -> None:
         self._clock = clock
@@ -53,6 +63,9 @@ class MenuModel:
         self._boot_elapsed = 0.0
         # 부팅 진입 시각을 "고정" 시계로 씀 (부팅은 2초라 매 프레임 갱신할 필요 없음).
         self._boot_hhmm: Optional[str] = _hhmm(self._clock())
+        # MAIN_MENU용 ListComponent — 상태 없는 서비스. 항목 리스트 고정.
+        self._main_list = ListComponent(_MAIN_ITEMS)
+        self._main_ctx = ListContext()
 
     def handle_input(self, event: InputEvent) -> None:
         if self._kind is ScreenKind.BOOT:
@@ -63,12 +76,18 @@ class MenuModel:
             self._handle_sub(event)
 
     def _handle_main(self, event: InputEvent) -> None:
-        if event is ENCODER_ROTATE_CW:
-            self._index = (self._index + 1) % _MAIN_ITEMS
-        elif event is ENCODER_ROTATE_CCW:
-            self._index = (self._index - 1) % _MAIN_ITEMS
-        elif event is ENCODER_CLICK:
-            self._kind = _MAIN_TARGETS[self._index]
+        # ListComponent에 위임. Cell 우선 입력 라우팅.
+        new_selected, _go_up = self._main_list.handle_input(
+            event, self._index, self._main_ctx
+        )
+        n = len(_MAIN_ITEMS)
+        # wrap-around는 모델 책임 (ListComponent는 min/max 클램프만).
+        self._index = new_selected % n if n else 0
+        # Cell이 navigate 요청했으면 화면 전환 (NavItem 클릭 → MUSIC/GAME/SETTINGS).
+        target = self._main_ctx.consume_navigate()
+        if target is not None:
+            self._kind = target
+        # go_up 신호는 MAIN_MENU 자체가 최상위라 의미 없음 — 서브에서만.
 
     def _handle_sub(self, event: InputEvent) -> None:
         if event is BTN4:  # 뒤로 (스펙 4.2.2)
