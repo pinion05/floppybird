@@ -163,6 +163,102 @@ class DrawScreenTests(unittest.TestCase):
         self.assertEqual(settings, self._frame(Screen(ScreenKind.SETTINGS)))
 
 
+class ClockStatusBarTests(unittest.TestCase):
+    """MAIN_MENU 우상단 HH:MM 시계 검증.
+
+    Screen.now_hhmm이 None이면 시계를 그리지 않고,
+    "HH:MM" 문자열이면 우상단(x≈103..127, y=0..7)에 픽셀이 켜진다.
+    """
+
+    def setUp(self) -> None:
+        self.renderer = MvlsbRenderer()
+
+    def _frame(self, screen: Screen) -> bytes:
+        return draw_screen(screen, self.renderer)
+
+    def _region_has_pixels(self, frame: bytes, x0: int, x1: int, y0: int, y1: int) -> bool:
+        """지정한 직사각형 영역에 켜진 픽셀이 하나라도 있으면 True."""
+        for y in range(y0, y1 + 1):
+            for x in range(x0, x1 + 1):
+                if frame[(y // 8) * _WIDTH + x] & (1 << (y % 8)):
+                    return True
+        return False
+
+    def test_main_menu_with_clock_draws_pixels_in_top_right(self) -> None:
+        """now_hhmm이 주어지면 우상단 영역(x>=100, y<=7)에 픽셀이 있어야 한다."""
+        screen = Screen(ScreenKind.MAIN_MENU, index=0, now_hhmm="12:34")
+        frame = self._frame(screen)
+        self.assertTrue(
+            self._region_has_pixels(frame, 100, 127, 0, 7),
+            "시계 픽셀이 우상단에 그려져야 함",
+        )
+
+    def test_main_menu_without_clock_has_no_top_right_pixels(self) -> None:
+        """now_hhmm=None이면 우상단 시계 영역이 비어 있어야 한다.
+
+        메뉴 항목 가장 긴 '> MUSIC PLAYER' 우측 끝이 x=62이므로,
+        x>=100 영역은 시계가 없으면 켜진 픽셀이 없어야 한다.
+        """
+        screen = Screen(ScreenKind.MAIN_MENU, index=0, now_hhmm=None)
+        frame = self._frame(screen)
+        self.assertFalse(
+            self._region_has_pixels(frame, 100, 127, 0, 7),
+            "시계 없으면 우상단 영역이 비어 있어야 함",
+        )
+
+    def test_clock_does_not_overlap_menu_items(self) -> None:
+        """시계와 메뉴 항목 텍스트가 겹치면 안 된다.
+
+        가장 긴 항목 '> MUSIC PLAYER'의 우측 끝(x=62)과
+        시계 시작(x≈103) 사이에 빈 열이 있어야 한다.
+        x=80..95 중간 영역에 픽셀이 없어야 한다 (둘 다 안 닿음).
+        """
+        screen = Screen(ScreenKind.MAIN_MENU, index=0, now_hhmm="12:34")
+        frame = self._frame(screen)
+        self.assertFalse(
+            self._region_has_pixels(frame, 80, 95, 0, 7),
+            "메뉴 항목과 시계 사이에 빈 간격이 있어야 함",
+        )
+
+    def test_boot_does_not_draw_clock(self) -> None:
+        """BOOT는 워드마크와 겹치므로 시계를 그리지 않는다.
+
+        now_hhmm이 있어도 BOOT 화면은 워드마크만 표시한다.
+        BOOT 워드마크 영역(x=23..104) 외에 우상단 시계가 추가로 그려지지 않았는지:
+        now_hhmm=None BOOT와 now_hhmm='12:34' BOOT 프레임이 동일해야 한다.
+        """
+        no_clock = self._frame(Screen(ScreenKind.BOOT, boot_elapsed=0.5))
+        with_clock = self._frame(
+            Screen(ScreenKind.BOOT, boot_elapsed=0.5, now_hhmm="12:34")
+        )
+        self.assertEqual(
+            no_clock, with_clock, "BOOT는 now_hhmm 값과 무관하게 동일해야 함"
+        )
+
+    def test_subscreens_ignore_clock(self) -> None:
+        """서브화면(MUSIC/GAME/SETTINGS)은 시계를 그리지 않는다."""
+        for kind in (ScreenKind.MUSIC, ScreenKind.GAME, ScreenKind.SETTINGS):
+            with self.subTest(kind=kind):
+                no_clock = self._frame(Screen(kind))
+                with_clock = self._frame(Screen(kind, now_hhmm="12:34"))
+                self.assertEqual(
+                    no_clock,
+                    with_clock,
+                    f"{kind}은 now_hhmm과 무관하게 동일해야 함",
+                )
+
+    def test_clock_different_times_produce_different_frames(self) -> None:
+        """다른 시간 → 다른 프레임 (시계가 실제로 시간을 반영)."""
+        f1 = self._frame(Screen(ScreenKind.MAIN_MENU, index=0, now_hhmm="12:34"))
+        f2 = self._frame(Screen(ScreenKind.MAIN_MENU, index=0, now_hhmm="12:35"))
+        self.assertNotEqual(f1, f2, "다른 시간은 다른 프레임이어야 함")
+
+    def test_clock_frame_is_deterministic(self) -> None:
+        """같은 시간의 시계 프레임은 두 번 그려도 동일해야 함."""
+        screen = Screen(ScreenKind.MAIN_MENU, index=0, now_hhmm="12:34")
+        self.assertEqual(self._frame(screen), self._frame(screen))
+
+
 def _build_package_zip() -> str:
     """src/mn12832l 패키지 전체를 zip으로 묶어 임시 경로 반환 (zipimport 시뮬레이션).
 

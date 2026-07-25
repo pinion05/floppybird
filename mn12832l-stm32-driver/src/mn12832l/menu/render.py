@@ -80,6 +80,19 @@ def _draw_loading_bar(draw: ImageDraw.ImageDraw, step: int) -> None:
         draw.line((x, bar_top + 2, x, bar_bottom - 2), fill=1)
 
 
+def _draw_clock(draw: ImageDraw.ImageDraw, font: ImageFont.ImageFont, hhmm: str) -> None:
+    """우상단(오른쪽 위)에 "HH:MM" 시계를 그린다.
+
+    Galmuri7 size 8에서 "HH:MM"은 24px 폭. 우측 1px 여백을 두고 우상단 정렬.
+    MAIN_MENU의 가장 긴 항목("> MUSIC PLAYER", 우측 끝 x=62)과 겹치지 않는다
+    (시계 시작 x≈103). BOOT 화면엔 워드마크(x=23..104)와 겹쳐 그리지 않는다.
+    """
+    bbox = font.getbbox(hhmm)
+    text_width = bbox[2] - bbox[0]
+    x = FRAME_WIDTH - text_width - 1  # 우측 1px 여백
+    draw.text((x, 0), hhmm, font=font, fill=1)
+
+
 def draw_screen(screen: Screen, renderer: MvlsbRenderer) -> bytes:
     """Screen 데이터를 framebuffer에 그리고 512바이트 snapshot 반환."""
     image = Image.new("1", (128, 32), 0)
@@ -89,6 +102,8 @@ def draw_screen(screen: Screen, renderer: MvlsbRenderer) -> bytes:
     if screen.kind is ScreenKind.BOOT:
         # 패키지 로딩 애니메이션: 워드마크(정적) + 스캔바(좌→우 순환).
         # step은 boot_elapsed(초)를 100fps로 변환 — 기본 20fps의 5배속.
+        # BOOT엔 시계를 그리지 않는다 — 워드마크(x=23..104)와 우상단 시계가
+        # 겹치고, 부팅은 2초라 시계 가치가 낮다.
         step = int(screen.boot_elapsed * 100)
         _draw_wordmark(draw)
         _draw_loading_bar(draw, step)
@@ -98,6 +113,9 @@ def draw_screen(screen: Screen, renderer: MvlsbRenderer) -> bytes:
             y = 3 + i * 9
             marker = ">" if i == screen.index else " "
             draw.text((1, y), f"{marker} {label}", font=font, fill=1)
+        # 우상단 벽시계 — 시간이 None(BOOT 직후 예외 케이스)이면 그리지 않음.
+        if screen.now_hhmm is not None:
+            _draw_clock(draw, font, screen.now_hhmm)
     elif screen.kind is ScreenKind.MUSIC:
         draw.text((1, 2), "NOW PLAYING", font=font, fill=1)
         draw.text((1, 12), "TRACK 01", font=font, fill=1)
