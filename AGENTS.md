@@ -57,3 +57,27 @@ notion search "Floppybird"
 - **앱**(`floppybird-app/`) — Fallout 컨셉 메뉴 + Tkinter 미리보기, 드라이버에 의존
 
 앱은 드라이버 공개 API만 import한다 (`from mn12832l import ...`). 드라이버 내부 모듈을 `mn12832l.display`, `mn12832l.twin` 형태로 직접 import하지 않는다. 역방향(드라이버→앱) 의존은 금지.
+
+### Node 트리 아키텍처 (이슈 #9, PR #10)
+
+메뉴 화면은 **Composite 패턴 Node 트리**로 구성. `ScreenKind` enum은 폐지됨.
+
+```
+Node (ABC) — render / handle_input → Optional[Node] / tick → Optional[Node]
+├── Page (ABC) — 루트 가능, 전체 512px 책임
+│   ├── BootPage      — tick 2초 후 MainPage 반환
+│   ├── MainPage      — ListComponent 자식 + 시계
+│   ├── MusicPage     — BTN4 → back Page 반환
+│   ├── GamePage      — BTN4 → back Page 반환
+│   └── SettingsPage  — BTN4 → back Page 반환
+├── ListComponent     — selected 자체 보유, Cell 우선 입력 라우팅
+└── ListCell (ABC)    — render_cell(rect, selected), on_xxx bool 반환
+    └── NavItem       — on_encoder_click → ctx.navigate(팩토리)
+```
+
+규칙:
+- 화면 식별은 `isinstance(node, PageClass)`. enum 금지.
+- 페이지 이동은 `Callable[[], Page]` 팩토리. `ScreenKind` 값 전달 금지.
+- `MenuModel`은 root Node만 보유. `handle_input`/`tick` 반환값으로 root 교체.
+- 새 Page 추가 시: `nodes.py`에 Page 클래스 추가, `NavItem`에 팩토리 등록.
+- `ListComponent`는 selected 상태를 자체 보유. 외부에서 인자로 전달하지 않는다.
