@@ -35,36 +35,57 @@ class MenuApp:
     def setup(self) -> None:
         self._root.title("Floppybird Menu Preview")
 
-        # 디스플레이(캔버스) + 우측 버튼 열을 가로로 나란히 묶는 컨테이너.
         display_frame = tk.Frame(self._root)
         display_frame.pack(padx=12, pady=12)
 
         self._canvas = tk.Canvas(
-            display_frame, width=_WIDTH * _SCALE, height=_HEIGHT * _SCALE,
-            bg=_VFD_OFF, highlightthickness=1, highlightbackground="#143a32",
+            display_frame,
+            width=_WIDTH * _SCALE,
+            height=_HEIGHT * _SCALE,
+            bg=_VFD_OFF,
+            highlightthickness=1,
+            highlightbackground="#143a32",
         )
         self._canvas.pack(side="left")
 
-        # 버튼 열 — 디스플레이 우측에 BTN1→BTN4 위에서 아래로 세로 배치.
         btn_frame = tk.Frame(display_frame)
         btn_frame.pack(side="left", padx=(12, 0), fill="y")
-        for event, label in [(BTN1, "BTN1"), (BTN2, "BTN2"), (BTN3, "BTN3"),
-                             (BTN4, "BTN4 (뒤로)")]:
+        for event, label in [
+            (BTN1, "BTN1"),
+            (BTN2, "BTN2"),
+            (BTN3, "BTN3"),
+            (BTN4, "BTN4 (뒤로)"),
+        ]:
             self._source.make_button(btn_frame, event, label).pack(side="top", pady=4)
 
-        self._status = tk.Label(self._root, text="...", fg=_VFD_ON, bg="#04080a",
-                                font=("Galmuri7", 11), anchor="w", justify="left")
+        self._status = tk.Label(
+            self._root,
+            text="...",
+            fg=_VFD_ON,
+            bg="#04080a",
+            font=("Galmuri7", 11),
+            anchor="w",
+            justify="left",
+        )
         self._status.pack(fill="x", padx=12)
 
-        # 엔코더 행
         enc_frame = tk.Frame(self._root)
         enc_frame.pack(pady=6)
-        self._source.make_encoder_rotate(enc_frame, ENCODER_ROTATE_CCW, "◀ 다이얼").pack(side="left", padx=4)
+        self._source.make_encoder_rotate(enc_frame, ENCODER_ROTATE_CCW, "◀ 다이얼").pack(
+            side="left", padx=4
+        )
         self._source.make_encoder_click(enc_frame).pack(side="left", padx=4)
-        self._source.make_encoder_rotate(enc_frame, ENCODER_ROTATE_CW, "다이얼 ▶").pack(side="left", padx=4)
+        self._source.make_encoder_rotate(enc_frame, ENCODER_ROTATE_CW, "다이얼 ▶").pack(
+            side="left", padx=4
+        )
 
-        self._screen_label = tk.Label(self._root, text="Screen: BOOT", fg="#7aa399",
-                                      bg="#04080a", font=("Galmuri7", 10))
+        self._screen_label = tk.Label(
+            self._root,
+            text="Screen: BootPage",
+            fg="#7aa399",
+            bg="#04080a",
+            font=("Galmuri7", 10),
+        )
         self._screen_label.pack(pady=4)
 
         self._root.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -81,27 +102,30 @@ class MenuApp:
         dt = now - self._last_tick_time
         self._last_tick_time = now
 
-        # 1. 입력 소비 (스펙 4.5 — 폴링 단계가 명시적으로 먼저)
         for event in self._source.poll():
             self._model.handle_input(event)
 
-        # 2. 시간 기반 전이
         self._model.tick(dt)
 
-        # 3-5. 렌더 + 검증 + 표시
-        result = self._presenter.present(self._model.current_screen())
-        self._draw_frame(result.verified_frame, result.twin_passed, result.error, result.stats)
+        result = self._presenter.present(self._model.current_root())
+        self._draw_frame(
+            result.verified_frame, result.twin_passed, result.error, result.stats
+        )
 
         self._root.after(_FPS_MS, self.tick)
 
-    def _draw_frame(self, frame: bytes, passed: bool, error: Optional[str],
-                    stats: Optional[dict]) -> None:
+    def _draw_frame(
+        self,
+        frame: bytes,
+        passed: bool,
+        error: Optional[str],
+        stats: Optional[dict],
+    ) -> None:
         if self._canvas is None:
             return
         self._canvas.delete("all")
         color = _VFD_ON if passed else "#ff5c6c"
 
-        # 512바이트 → 픽셀
         for y in range(_HEIGHT):
             byte_row = y // 8
             bit = y % 8
@@ -109,23 +133,30 @@ class MenuApp:
                 on = bool(frame[byte_row * _WIDTH + x] & (1 << bit))
                 if on:
                     self._canvas.create_rectangle(
-                        x * _SCALE, y * _SCALE, (x + 1) * _SCALE, (y + 1) * _SCALE,
-                        fill=color, outline="",
+                        x * _SCALE,
+                        y * _SCALE,
+                        (x + 1) * _SCALE,
+                        (y + 1) * _SCALE,
+                        fill=color,
+                        outline="",
                     )
 
         if not passed and error:
             self._canvas.create_text(
-                _WIDTH * _SCALE // 2, _HEIGHT * _SCALE // 2,
-                text=f"FAIL: {error[:40]}", fill="#ff5c6c", font=("Galmuri7", 10),
+                _WIDTH * _SCALE // 2,
+                _HEIGHT * _SCALE // 2,
+                text=f"FAIL: {error[:40]}",
+                fill="#ff5c6c",
+                font=("Galmuri7", 10),
             )
 
         status_lines = []
         if passed and stats:
             status_lines.append("DIGITAL TWIN: PASS")
             status_lines.append(
-                f"PHASE {stats.get('phases','?')} | "
-                f"CLK {stats.get('clock_rises','?')} | "
-                f"LAT {stats.get('latches','?')}"
+                f"PHASE {stats.get('phases', '?')} | "
+                f"CLK {stats.get('clock_rises', '?')} | "
+                f"LAT {stats.get('latches', '?')}"
             )
         elif error:
             status_lines.append(f"FAIL: {error[:50]}")
@@ -135,7 +166,8 @@ class MenuApp:
             self._status.config(text="\n".join(status_lines))
 
         if self._screen_label is not None:
-            self._screen_label.config(text=f"Screen: {self._model.current_screen().kind.name}")
+            label = type(self._model.current_root()).__name__
+            self._screen_label.config(text=f"Screen: {label}")
 
     def on_close(self) -> None:
         if self._closed:

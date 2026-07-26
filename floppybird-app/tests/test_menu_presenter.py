@@ -1,7 +1,9 @@
+"""presenter 테스트 — Node 트리 기반 (이슈 #9)."""
+
 import os
 import unittest
 
-from floppybird.menu.model import Screen, ScreenKind
+from floppybird.menu.nodes import BootPage, GamePage, MainPage, MusicPage, SettingsPage
 from floppybird.menu.presenter import MenuPresenter
 
 
@@ -17,38 +19,38 @@ class PresenterWithSystemTwinTests(unittest.TestCase):
         presenter = MenuPresenter(engine=self.engine)
         presenter.open()
         try:
-            result = presenter.present(Screen(ScreenKind.BOOT))
+            result = presenter.present(BootPage())
         finally:
             presenter.close()
         self.assertTrue(result.twin_passed, f"twin failed: {result.error}")
         self.assertEqual(len(result.verified_frame), 512)
         self.assertIsNotNone(result.stats)
 
-    def test_all_screens_pass_twin(self) -> None:
-        screens = [
-            Screen(ScreenKind.BOOT),
-            Screen(ScreenKind.MAIN_MENU, index=0),
-            Screen(ScreenKind.MAIN_MENU, index=1),
-            Screen(ScreenKind.MAIN_MENU, index=2),
-            Screen(ScreenKind.MUSIC),
-            Screen(ScreenKind.GAME),
-            Screen(ScreenKind.SETTINGS),
+    def test_all_pages_pass_twin(self) -> None:
+        nodes = [
+            BootPage(),
+            MainPage(),
+            MusicPage(),
+            GamePage(),
+            SettingsPage(),
         ]
         presenter = MenuPresenter(engine=self.engine)
         presenter.open()
         try:
-            for s in screens:
-                result = presenter.present(s)
-                self.assertTrue(result.twin_passed, f"{s.kind}: {result.error}")
+            for node in nodes:
+                result = presenter.present(node)
+                self.assertTrue(
+                    result.twin_passed, f"{type(node).__name__}: {result.error}"
+                )
         finally:
             presenter.close()
 
-    def test_identical_screen_skipped_but_returns_last_verified(self) -> None:
+    def test_identical_node_produces_identical_verified_frame(self) -> None:
         presenter = MenuPresenter(engine=self.engine)
         presenter.open()
         try:
-            first = presenter.present(Screen(ScreenKind.GAME))
-            second = presenter.present(Screen(ScreenKind.GAME))  # dedup
+            first = presenter.present(GamePage())
+            second = presenter.present(GamePage())
             self.assertTrue(first.twin_passed)
             self.assertTrue(second.twin_passed)
             self.assertEqual(first.verified_frame, second.verified_frame)
