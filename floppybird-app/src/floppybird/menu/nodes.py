@@ -244,20 +244,14 @@ class ListComponent(Node):
         n = len(self.cells)
 
         if event is ENCODER_ROTATE_CW:
-            if cell.on_encoder_rotate(+1, self._ctx):
-                return None
-            self._selected = (self._selected + 1) % n
-            return None
-        if event is ENCODER_ROTATE_CCW:
-            if cell.on_encoder_rotate(-1, self._ctx):
-                return None
-            self._selected = (self._selected - 1) % n
-            return None
-        if event is BTN4:
+            if not cell.on_encoder_rotate(+1, self._ctx):
+                self._selected = (self._selected + 1) % n
+        elif event is ENCODER_ROTATE_CCW:
+            if not cell.on_encoder_rotate(-1, self._ctx):
+                self._selected = (self._selected - 1) % n
+        elif event is BTN4:
             cell.on_button_4(self._ctx)
-            # go_up — MainPage 최상위라 의미 없음. 재귀 Page에서는 부모가 먼저 BTN4 처리.
-            return None
-        if event is BTN1:
+        elif event is BTN1:
             cell.on_button_1(self._ctx)
         elif event is BTN2:
             cell.on_button_2(self._ctx)
@@ -266,7 +260,7 @@ class ListComponent(Node):
         elif event is ENCODER_CLICK:
             cell.on_encoder_click(self._ctx)
 
-        # Cell이 navigate 요청했으면 팩토리 호출 → 새 Page 반환
+        # 모든 이벤트 처리 후 navigate 소비 — Cell이 ctx.navigate() 요청했으면 팩토리 호출
         target = self._ctx.consume_navigate()
         if target is not None:
             return target()

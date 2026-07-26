@@ -7,24 +7,16 @@ handle_input/tick 결과로 새 Node가 반환되면 루트 교체.
 from __future__ import annotations
 
 import time
-from typing import Callable, Optional
 
 from .input import InputEvent
-from .nodes import BootPage, ClockSource, Node, Page
-
-ClockSource = Callable[[], "time.struct_time"]
+from .nodes import BootPage, ClockSource, Node
 
 
 class MenuModel:
     """메뉴 상태. root Node만 보유. 입력/시간 → Node에 위임."""
 
     def __init__(self, clock: ClockSource = time.localtime) -> None:
-        self._clock = clock
         self._root: Node = BootPage(clock=clock)
-
-    @property
-    def root(self) -> Node:
-        return self._root
 
     def handle_input(self, event: InputEvent) -> None:
         nxt = self._root.handle_input(event)

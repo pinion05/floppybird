@@ -45,7 +45,7 @@ class PresenterWithSystemTwinTests(unittest.TestCase):
         finally:
             presenter.close()
 
-    def test_identical_node_skipped_but_returns_last_verified(self) -> None:
+    def test_identical_node_produces_identical_verified_frame(self) -> None:
         presenter = MenuPresenter(engine=self.engine)
         presenter.open()
         try:

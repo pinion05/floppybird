@@ -44,7 +44,7 @@ from floppybird.menu.nodes import (
     SettingsPage,
 )
 from floppybird.menu.render import draw_root, _font
-from mn12832l.renderer import MvlsbRenderer
+from mn12832l import MvlsbRenderer
 
 _WIDTH = 128
 _HEIGHT = 32
@@ -452,14 +452,11 @@ class MenuModelIntegrationTests(unittest.TestCase):
         self.assertTrue(_region_has_pixels(frame, 100, 127, 0, 7))
 
     def test_boot_no_clock_in_top_right(self) -> None:
-        """BootPage는 clock이 있어도 시계를 그리지 않는다 — 프레임 동일."""
-        model_no = MenuModel(clock=_make_clock(12, 34))
-        f_no = _render_frame(model_no.current_root())
-        # BootPage 자체(워드마크) 픽셀은 있지만 clock 픽셀이 추가되지 않음.
-        # clock 주입 여부와 무관하게 동일 프레임.
-        boot_no_clock = _render_frame(BootPage())
-        boot_with_clock = _render_frame(BootPage(clock=_make_clock(12, 34)))
-        self.assertEqual(boot_no_clock, boot_with_clock)
+        """MenuModel(clock) → BootPage 렌더가 clock 없는 BootPage와 동일."""
+        model = MenuModel(clock=_make_clock(12, 34))
+        f_with = _render_frame(model.current_root())
+        f_without = _render_frame(BootPage())
+        self.assertEqual(f_with, f_without)
 
     def test_clock_zero_pads(self) -> None:
         model = MenuModel(clock=_make_clock(9, 5))

@@ -62,7 +62,7 @@ notion search "Floppybird"
 
 메뉴 화면은 **Composite 패턴 Node 트리**로 구성. `ScreenKind` enum은 폐지됨.
 
-```
+```text
 Node (ABC) — render / handle_input → Optional[Node] / tick → Optional[Node]
 ├── Page (ABC) — 루트 가능, 전체 512px 책임
 │   ├── BootPage      — tick 2초 후 MainPage 반환
